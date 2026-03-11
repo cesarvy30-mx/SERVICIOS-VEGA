@@ -1496,12 +1496,12 @@
           <div class="rate-card">
             <div class="rate-icon">📍</div>
             <div class="rate-name">Carrera corta</div>
-            <div class="rate-price">S/ 2</div>
+            <div class="rate-price">S/ 3</div>
           </div>
           <div class="rate-card">
             <div class="rate-icon">🗺️</div>
             <div class="rate-name">Carrera larga</div>
-            <div class="rate-price">S/ 5</div>
+            <div class="rate-price">S/ 7</div>
           </div>
           <div class="rate-card">
             <div class="rate-icon">🛒</div>
@@ -1693,18 +1693,18 @@
 <script>
 // ── Data ──
 const licencias = [
-  { icon:'🪟', name:'Windows 11 Pro', desc:'Licencia digital original. Activación permanente.', price:'S/ 25', cat:'microsoft', badge:'TOP' },
-  { icon:'📦', name:'Office 365 Personal', desc:'Word, Excel, PowerPoint, Outlook y más.', price:'S/ 45', cat:'microsoft', badge:'' },
-  { icon:'📦', name:'Office 2024 Pro Plus', desc:'Licencia permanente para PC. Sin suscripción.', price:'S/ 65', cat:'microsoft', badge:'NUEVO' },
-  { icon:'🛡️', name:'Kaspersky Total Security', desc:'Protección total 1 año / 3 PCs.', price:'S/ 35', cat:'antivirus', badge:'' },
-  { icon:'🛡️', name:'ESET NOD32', desc:'Antivirus liviano y potente. 1 año.', price:'S/ 30', cat:'antivirus', badge:'' },
-  { icon:'🏗️', name:'AutoCAD 2024', desc:'Diseño arquitectónico y de ingeniería.', price:'S/ 80', cat:'autodesk', badge:'' },
-  { icon:'🎨', name:'CorelDRAW 2024', desc:'Suite de diseño gráfico profesional.', price:'S/ 70', cat:'diseño', badge:'' },
-  { icon:'🖼️', name:'Adobe Photoshop CC', desc:'El estándar de la edición de imágenes.', price:'S/ 75', cat:'diseño', badge:'' },
-  { icon:'🏗️', name:'3ds Max 2024', desc:'Modelado y animación 3D profesional.', price:'S/ 90', cat:'autodesk', badge:'' },
-  { icon:'💻', name:'Windows 10 Pro', desc:'Licencia digital. Activación permanente.', price:'S/ 20', cat:'microsoft', badge:'' },
-  { icon:'🎵', name:'Adobe Premiere Pro', desc:'Edición de video profesional.', price:'S/ 80', cat:'diseño', badge:'' },
-  { icon:'🛡️', name:'Bitdefender Total', desc:'Antivirus premiado. 1 año / 5 dispositivos.', price:'S/ 38', cat:'antivirus', badge:'' },
+  { icon:'🪟', name:'Windows 11 Pro', desc:'Licencia digital original. Activación permanente.', price:'consultar', cat:'microsoft', badge:'TOP' },
+  { icon:'📦', name:'Office 365 Personal', desc:'Word, Excel, PowerPoint, Outlook y más.', price:'consultar', cat:'microsoft', badge:'' },
+  { icon:'📦', name:'Office 2024 Pro Plus', desc:'Licencia permanente para PC. Sin suscripción.', price:'consultar', cat:'microsoft', badge:'NUEVO' },
+  { icon:'🛡️', name:'Kaspersky Total Security', desc:'Protección total 1 año / 3 PCs.', price:'consultar', cat:'antivirus', badge:'' },
+  { icon:'🛡️', name:'ESET NOD32', desc:'Antivirus liviano y potente. 1 año.', price:'consultar', cat:'antivirus', badge:'' },
+  { icon:'🏗️', name:'AutoCAD 2024', desc:'Diseño arquitectónico y de ingeniería.', price:'consultar', cat:'autodesk', badge:'' },
+  { icon:'🎨', name:'CorelDRAW 2024', desc:'Suite de diseño gráfico profesional.', price:'consultar', cat:'diseño', badge:'' },
+  { icon:'🖼️', name:'Adobe Photoshop CC', desc:'El estándar de la edición de imágenes.', price:'consultar', cat:'diseño', badge:'' },
+  { icon:'🏗️', name:'3ds Max 2024', desc:'Modelado y animación 3D profesional.', price:'consultar', cat:'autodesk', badge:'' },
+  { icon:'💻', name:'Windows 10 Pro', desc:'Licencia digital. Activación permanente.', price:'consultar', cat:'microsoft', badge:'' },
+  { icon:'🎵', name:'Adobe Premiere Pro', desc:'Edición de video profesional.', price:'consultar', cat:'diseño', badge:'' },
+  { icon:'🛡️', name:'Bitdefender Total', desc:'Antivirus premiado. 1 año / 5 dispositivos.', price:'consultar', cat:'antivirus', badge:'' },
 ];
 
 const cursos = [
@@ -2651,7 +2651,7 @@ function closeAdmin() {
 // ── Services management ──
 const services = [
   { key:'licencias', label:'🔑 Licencias', active:true },
-  { key:'cursos',    label:'📚 Cursos',    active:true },
+  { key:'cursos',    label:'📚 Cursos',    active:fall },
   { key:'peliculas', label:'🎬 Películas', active:true },
   { key:'mototaxi',  label:'🛺 Mototaxi', active:true },
 ];
