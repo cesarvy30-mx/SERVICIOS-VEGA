@@ -3256,5 +3256,70 @@ function showToast(msg) {
   init();
 })();
 </script>
+  // CONFIGURACIÓN: Ajusta esto si tu repo cambia
+  const REPO = 'vegatec/vegatec.github.io'; 
+  const BRANCH = 'main';
+  const FILE = 'index.html';
+  const SHA_KEY = 'v_sha';
+  const CHECK_MS = 30000; // Revisa cada 30 segundos
+
+  async function check() {
+    try {
+      // 1. Consultar el último commit en la API de GitHub
+      // El "_=${Date.now()}" evita que la propia consulta a la API se guarde en caché
+      const apiRes = await fetch(
+        `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1&_=${Date.now()}`,
+        { 
+          cache: 'no-store', 
+          headers: { 'Accept': 'application/vnd.github.v3+json' } 
+        }
+      );
+
+      if (!apiRes.ok) return;
+      const [{ sha }] = await apiRes.json();
+      const stored = localStorage.getItem(SHA_KEY);
+
+      // Si no hay versión guardada, guardamos la actual y salimos
+      if (!stored) {
+        localStorage.setItem(SHA_KEY, sha);
+        return;
+      }
+
+      // 2. SI EL SHA ES DIFERENTE, HAY ACTUALIZACIÓN
+      if (stored !== sha) {
+        console.log("Nueva actualización detectada. Forzando recarga...");
+        
+        // Guardamos el nuevo SHA antes de recargar
+        localStorage.setItem(SHA_KEY, sha);
+
+        // 3. RECARGA FORZADA:
+        // Añadimos el SHA a la URL como parámetro (?v=...) 
+        // Esto obliga al navegador y a GitHub Pages a soltar la versión vieja
+        const nuevaUrl = new URL(window.location.href);
+        nuevaUrl.searchParams.set('v', sha);
+        
+        // Redirección interna instantánea
+        window.location.replace(nuevaUrl.href);
+      }
+
+    } catch (error) {
+      console.error("Error en la comprobación automática:", error);
+    }
+  }
+
+  function init() {
+    // Primera comprobación al cargar
+    check();
+    
+    // Comprobación periódica cada 30 seg
+    setInterval(check, CHECK_MS);
+
+    // Si el cliente bloqueó el móvil y lo desbloquea, revisar al instante
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') check();
+    });
+  }
+
+  init();
 </body>
 </html>
