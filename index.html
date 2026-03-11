@@ -1325,6 +1325,8 @@
   .nav-links a:hover::after { transform: scaleX(1); }
   .nav-links a:hover { color: #fff !important; }
 </style>
+
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 </head>
 <body>
 
@@ -1670,7 +1672,7 @@
     </div>
     <!-- Player — 16:9 -->
     <div style="position:relative; padding-bottom:56.25%; background:#000;">
-      <iframe id="yt-frame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" style="position:absolute; inset:0; width:100%; height:100%; border:none;"></iframe>
+      <iframe id="yt-frame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" style="position:absolute; inset:0; width:100%; height:100%; border:none;" referrerpolicy="strict-origin-when-cross-origin"></iframe>
       <!-- Fallback overlay (shown if error detected) -->
       <div id="yt-fallback" style="display:none; position:absolute; inset:0; background:#111; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
         <div style="font-size:3rem;">⚠️</div>
@@ -2083,8 +2085,31 @@ document.addEventListener('keydown', e => {
 
 // ── Video ──
 function playVideo(id, title) {
-  window.open('https://www.youtube.com/watch?v=' + id, '_blank');
+  const modal = document.getElementById('video-modal');
+  const frame = document.getElementById('yt-frame');
+  const titleEl = document.getElementById('video-title');
+  const fallback = document.getElementById('yt-fallback');
+  const fallbackLink = document.getElementById('yt-fallback-link');
+
+  if (titleEl) titleEl.textContent = title || 'Reproduciendo...';
+  if (fallback) fallback.style.display = 'none';
+  if (fallbackLink) fallbackLink.href = 'https://www.youtube.com/watch?v=' + id;
+
+  // Reproducir dentro de la página (embed simple)
+  // IMPORTANTE: YouTube puede devolver Error 153 si no recibe Referer/origin.
+  // - Añadimos origin=location.origin al src
+  // - Forzamos referrerpolicy para permitir Referer mínimo
+  if (frame) {
+    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    const origin = encodeURIComponent(location.origin);
+    frame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1&origin=' + origin;
+  }
+
+  if (modal) modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
+
+
 function closeVideo() {
   document.getElementById('yt-frame').src = '';
   document.getElementById('video-modal').classList.remove('open');
@@ -2651,7 +2676,7 @@ function closeAdmin() {
 // ── Services management ──
 const services = [
   { key:'licencias', label:'🔑 Licencias', active:true },
-  { key:'cursos',    label:'📚 Cursos',    active:fall },
+  { key:'cursos',    label:'📚 Cursos',    active:false },
   { key:'peliculas', label:'🎬 Películas', active:true },
   { key:'mototaxi',  label:'🛺 Mototaxi', active:true },
 ];
@@ -3137,101 +3162,124 @@ function showToast(msg) {
 <!-- ====================================================
      AUTO-UPDATER VEGA TEC v4 — Raw fetch bypass CDN
      ==================================================== -->
-<!-- ====================================================
-     AUTO-UPDATER VEGA TEC v5 — Versión limpia y unificada
-     ==================================================== -->
 <script>
 (function () {
-  // ── CONFIGURACIÓN ── (cámbialo si migras el repo)
-  const REPO     = 'vegatec/vegatec.github.io';     // ← Pon aquí tu nuevo repo si lo tienes (usuario/repo)
+  const REPO     = 'cesarvy30-mx/SERVICIOS-VEGA';
   const BRANCH   = 'main';
-  const FILE     = 'index.html';                    // No cambies si es el mismo archivo
-  const SHA_KEY  = 'vega_sha';                      // Clave única para no chocar con versiones viejas
-  const CHECK_MS = 30000;                           // 30 segundos
+  const FILE     = 'index.html';
+  const SHA_KEY  = 'vt_sha4';
+  const CHECK_MS = 30000;
 
-  // Limpiar cachés y service workers viejos (solo una vez)
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(reg => reg.unregister());
-    });
-  }
-  if ('caches' in window) {
-    caches.keys().then(keys => {
-      keys.forEach(key => caches.delete(key));
-    });
-  }
+  // Limpiar service workers y cachés viejos
+  if ('serviceWorker' in navigator)
+    navigator.serviceWorker.getRegistrations().then(r => r.forEach(sw => sw.unregister()));
+  if ('caches' in window)
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 
-  // Indicador visual opcional (puedes comentarlo si no lo quieres)
-  function showDot(state) {
-    let el = document.getElementById('vt-update-dot');
+  /* ── Indicador visual ── */
+  function dot(state) {
+    let el = document.getElementById('vt-dot');
     if (!el) {
       el = document.createElement('div');
-      el.id = 'vt-update-dot';
+      el.id = 'vt-dot';
       Object.assign(el.style, {
-        position: 'fixed', bottom: '12px', right: '12px',
-        width: '10px', height: '10px', borderRadius: '50%',
-        zIndex: '99999', boxShadow: '0 0 8px rgba(0,212,255,.8)',
-        transition: 'background 0.3s'
+        position:'fixed', bottom:'12px', right:'12px',
+        width:'10px', height:'10px', borderRadius:'50%',
+        zIndex:'99999', boxShadow:'0 0 8px rgba(0,212,255,.8)'
       });
       document.body.appendChild(el);
     }
-    const colors = { wait: '#ffcc00', new: '#00d4ff', ok: '#00ff88', error: '#ff4444' };
-    el.style.background = colors[state] || '#00ff88';
-    el.title = { wait: 'Buscando cambios…', new: '¡Actualizando!', ok: 'Al día ✓', error: 'Error al chequear' }[state] || '';
-  }
-
-  async function checkUpdate() {
-    showDot('wait');
-    try {
-      const apiUrl = `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1&_=${Date.now()}`;
-      const res = await fetch(apiUrl, {
-        cache: 'no-store',
-        headers: { 'Accept': 'application/vnd.github.v3+json' }
-      });
-
-      if (!res.ok) throw new Error('GitHub API error: ' + res.status);
-
-      const [{ sha }] = await res.json();
-      const storedSha = localStorage.getItem(SHA_KEY);
-
-      if (!storedSha) {
-        localStorage.setItem(SHA_KEY, sha);
-        showDot('ok');
-        return;
+    el.style.animation = 'none';
+    el.style.background = {ok:'#00ff88', wait:'#ffcc00', new:'#00d4ff'}[state] || '#00ff88';
+    el.title = {ok:'Página al día ✓', wait:'Buscando cambios…', new:'¡Actualizando!'}[state] || '';
+    if (state === 'new') {
+      if (!document.getElementById('_vtks')) {
+        const s = document.createElement('style'); s.id = '_vtks';
+        s.textContent = '@keyframes _vtp{to{transform:scale(2.5);opacity:0}}';
+        document.head.appendChild(s);
       }
-
-      if (storedSha !== sha) {
-        showDot('new');
-        localStorage.setItem(SHA_KEY, sha);
-
-        // Recarga forzada ignorando caché (mejor para PWAs y móviles)
-        const url = new URL(window.location.href);
-        url.searchParams.set('update', sha.substring(0, 8)); // param corto para no alargar URL
-        window.location.replace(url.href);
-      } else {
-        showDot('ok');
-      }
-    } catch (err) {
-      console.warn('Updater falló:', err);
-      showDot('error');
+      el.style.animation = '_vtp .5s infinite';
     }
   }
 
-  function start() {
-    checkUpdate();
-    setInterval(checkUpdate, CHECK_MS);
+  /* ── Comprobación principal ── */
+  async function check() {
+    dot('wait');
+    try {
+      // 1. Obtener SHA del último commit vía API de GitHub (siempre fresco)
+      const apiRes = await fetch(
+        `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1&_=${Date.now()}`,
+        { cache: 'no-store', headers: { Accept: 'application/vnd.github.v3+json' } }
+      );
+      if (!apiRes.ok) { dot('ok'); return; }
+      const [{ sha }] = await apiRes.json();
+
+      const stored = localStorage.getItem(SHA_KEY);
+      if (!stored) { localStorage.setItem(SHA_KEY, sha); dot('ok'); return; }
+      if (stored === sha) { dot('ok'); return; }
+
+      // 2. HAY CAMBIO — descargar el HTML fresco desde raw.githubusercontent.com
+      //    Esta URL nunca pasa por el CDN de GitHub Pages
+      dot('new');
+      const rawUrl = `https://raw.githubusercontent.com/${REPO}/${sha}/${FILE}?_=${Date.now()}`;
+      const htmlRes = await fetch(rawUrl, { cache: 'no-store' });
+      if (!htmlRes.ok) { dot('ok'); return; }
+
+      const freshHTML = await htmlRes.text();
+
+      // 3. Guardar nuevo SHA ANTES de reemplazar para no entrar en bucle
+      localStorage.setItem(SHA_KEY, sha);
+
+      
+      // Esto limpia la caché del navegador y recarga la página por completo
+        window.location.href = window.location.pathname + "?v=" + sha;
+    } catch { dot('ok'); }
+  }
+
+  function init() {
+    check();
+ const SHA_KEY = 'v_sha';
+  const CHECK_MS = 30000; // 30 segundos
+
+  async function check() {
+    try {
+      // 1. Consultar el último commit en GitHub
+      const apiRes = await fetch(
+        `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1&_=${Date.now()}`,
+        { cache: 'no-store', headers: { Accept: 'application/vnd.github.v3+json' } }
+      );
+      if (!apiRes.ok) return;
+      const [{ sha }] = await apiRes.json();
+
+      const stored = localStorage.getItem(SHA_KEY);
+      
+      // Si es la primera vez, guardamos el SHA
+      if (!stored) { 
+        localStorage.setItem(SHA_KEY, sha); 
+        return; 
+      }
+
+      // 2. SI HAY CAMBIO: Forzar recarga total ignorando la caché
+      if (stored !== sha) {
+        localStorage.setItem(SHA_KEY, sha);
+        // Añadimos un parámetro de tiempo para que el navegador crea que es una web nueva
+        window.location.href = window.location.pathname + '?v=' + sha;
+      }
+
+    } catch (e) { console.error("Error checking update:", e); }
+  }
+
+  function init() {
+    check();
+    setInterval(check, CHECK_MS);
+    // Revisar actualización cuando el cliente vuelve a abrir el móvil
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') checkUpdate();
+      if (document.visibilityState === 'visible') check();
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
+  init();
 })();
-</script>
 </script>
  <script>
   // CONFIGURACIÓN: Verifica que estos datos coincidan con tu repo
@@ -3295,6 +3343,22 @@ function showToast(msg) {
   }
 
   init();
+
+// ── Video modal UX bindings (VEGA TEC) ──
+(function vtVideoModalBindings(){
+  const modal = document.getElementById('video-modal');
+  if(!modal) return;
+
+  // Cerrar al hacer clic en el fondo (no en el contenido)
+  modal.addEventListener('click', (e) => {
+    if(e.target === modal) closeVideo();
+  });
+
+  // Cerrar con ESC
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && modal.classList.contains('open')) closeVideo();
+  });
+})();
 </script>
 </body>
 </html>
