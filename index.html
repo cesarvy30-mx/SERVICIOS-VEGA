@@ -3213,15 +3213,47 @@ function showToast(msg) {
 
   function init() {
     check();
+ const SHA_KEY = 'v_sha';
+  const CHECK_MS = 30000; // 30 segundos
+
+  async function check() {
+    try {
+      // 1. Consultar el último commit en GitHub
+      const apiRes = await fetch(
+        `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1&_=${Date.now()}`,
+        { cache: 'no-store', headers: { Accept: 'application/vnd.github.v3+json' } }
+      );
+      if (!apiRes.ok) return;
+      const [{ sha }] = await apiRes.json();
+
+      const stored = localStorage.getItem(SHA_KEY);
+      
+      // Si es la primera vez, guardamos el SHA
+      if (!stored) { 
+        localStorage.setItem(SHA_KEY, sha); 
+        return; 
+      }
+
+      // 2. SI HAY CAMBIO: Forzar recarga total ignorando la caché
+      if (stored !== sha) {
+        localStorage.setItem(SHA_KEY, sha);
+        // Añadimos un parámetro de tiempo para que el navegador crea que es una web nueva
+        window.location.href = window.location.pathname + '?v=' + sha;
+      }
+
+    } catch (e) { console.error("Error checking update:", e); }
+  }
+
+  function init() {
+    check();
     setInterval(check, CHECK_MS);
+    // Revisar actualización cuando el cliente vuelve a abrir el móvil
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') check();
     });
   }
 
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init)
-    : init();
+  init();
 })();
 </script>
 </body>
