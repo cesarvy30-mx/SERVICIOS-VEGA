@@ -3205,11 +3205,9 @@ function showToast(msg) {
       // 3. Guardar nuevo SHA ANTES de reemplazar para no entrar en bucle
       localStorage.setItem(SHA_KEY, sha);
 
-      // 4. Reemplazar toda la página con el HTML nuevo — sin redirección, sin CDN
-      document.open('text/html', 'replace');
-      document.write(freshHTML);
-      document.close();
-
+      
+      // Esto limpia la caché del navegador y recarga la página por completo
+        window.location.href = window.location.pathname + "?v=" + sha;
     } catch { dot('ok'); }
   }
 
